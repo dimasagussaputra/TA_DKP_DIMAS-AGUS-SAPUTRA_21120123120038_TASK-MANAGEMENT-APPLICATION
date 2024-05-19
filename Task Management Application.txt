@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import font as tkfont
 
 class Task:
     def __init__(self, name, task_given_date, deadline_date):
@@ -18,17 +19,23 @@ class TaskManager:
         self.tasks.append(task)
 
     def display_tasks(self):
+        tasks_display.delete(1.0, tk.END)
         for index, task in enumerate(self.tasks, start=1):
-            task_text = f"{task.name} - Tanggal Pemberian Tugas: {task.task_given_date} - Deadline Tugas: {task.deadline_date} - Selesai: {'Ya' if task.completed else 'Belum'}"
+            task_text = f"{index}. {task.name} - Tanggal Pemberian Tugas: {task.task_given_date} - Deadline Tugas: {task.deadline_date} - Selesai: {'Ya' if task.completed else 'Belum'}"
             if not task.completed:
                 task_text += f" - [Tandai Selesai]"
-            tasks_display.insert(tk.END, f"{index}. {task_text}\n")
+            tasks_display.insert(tk.END, f"{task_text}\n")
+            tasks_display.tag_add("task", f"{index}.0", f"{index}.end")
+            tasks_display.tag_config("task", font=("Helvetica", 10))
 
     def mark_task_as_completed(self, index):
         if 0 <= index < len(self.tasks):
             self.tasks[index].mark_as_completed()
-            tasks_display.delete(1.0, tk.END)
             self.display_tasks()
+
+    def remove_completed_tasks(self):
+        self.tasks = [task for task in self.tasks if not task.completed]
+        self.display_tasks()
 
 def add_task():
     name = name_entry.get()
@@ -43,40 +50,60 @@ def add_task():
 
     name_entry.focus_set()
 
-    tasks_display.delete(1.0, tk.END)
-    task_manager.display_tasks()
-
 def mark_task(event):
     index = int(tasks_display.index(tk.CURRENT).split(".")[0]) - 1
     task_manager.mark_task_as_completed(index)
+
+def show_frame(frame):
+    frame.tkraise()
+    if frame == frame2:
+        task_manager.display_tasks()
 
 task_manager = TaskManager()
 
 root = tk.Tk()
 root.title("Task Management Application")
 
-name_label = tk.Label(root, text="Nama Tugas:")
+custom_font = tkfont.Font(family="Helvetica", size=10)
+
+frame1 = tk.Frame(root)
+frame2 = tk.Frame(root)
+
+for frame in (frame1, frame2):
+    frame.grid(row=0, column=0, sticky='nsew')
+
+name_label = tk.Label(frame1, text="Nama Tugas:", font=custom_font)
 name_label.grid(row=0, column=0)
-name_entry = tk.Entry(root)
+name_entry = tk.Entry(frame1, font=custom_font)
 name_entry.grid(row=0, column=1)
 
-task_given_date_label = tk.Label(root, text="Tanggal Pemberian Tugas:")
+task_given_date_label = tk.Label(frame1, text="Tanggal Pemberian Tugas:", font=custom_font)
 task_given_date_label.grid(row=1, column=0)
-task_given_date_entry = tk.Entry(root)
+task_given_date_entry = tk.Entry(frame1, font=custom_font)
 task_given_date_entry.grid(row=1, column=1)
 
-deadline_date_label = tk.Label(root, text="Deadline Tugas:")
+deadline_date_label = tk.Label(frame1, text="Deadline Tugas:", font=custom_font)
 deadline_date_label.grid(row=2, column=0)
-deadline_date_entry = tk.Entry(root)
+deadline_date_entry = tk.Entry(frame1, font=custom_font)
 deadline_date_entry.grid(row=2, column=1)
 
-add_button = tk.Button(root, text="Tambah Tugas", command=add_task)
+add_button = tk.Button(frame1, text="Tambah Tugas", command=add_task, font=custom_font)
 add_button.grid(row=3, column=0, columnspan=2)
 
-tasks_display = tk.Text(root)
-tasks_display.grid(row=4, column=0, columnspan=2)
-tasks_display.config(state=tk.NORMAL)
+next_button = tk.Button(frame1, text="Lihat Tugas", command=lambda: show_frame(frame2), font=custom_font)
+next_button.grid(row=4, column=0, columnspan=2)
 
+tasks_display = tk.Text(frame2, font=custom_font)
+tasks_display.grid(row=0, column=0, columnspan=2)
+tasks_display.config(state=tk.NORMAL)
 tasks_display.bind("<Button-1>", mark_task)
+
+delete_button = tk.Button(frame2, text="Hapus Tugas Selesai", command=task_manager.remove_completed_tasks, font=custom_font)
+delete_button.grid(row=1, column=0, columnspan=2)
+
+back_button = tk.Button(frame2, text="Kembali", command=lambda: show_frame(frame1), font=custom_font)
+back_button.grid(row=2, column=0, columnspan=2)
+
+show_frame(frame1)
 
 root.mainloop()
